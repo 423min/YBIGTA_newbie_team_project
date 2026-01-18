@@ -208,3 +208,6 @@ __marimo__/
 
 # Mac
 .DS_Store
+reviews_NaverMovie.csv
+reviews_RottenTomatoes.csv
+.DS_Store
