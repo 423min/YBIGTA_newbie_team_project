@@ -280,13 +280,28 @@ class RottenTomatoesCrawler(BaseCrawler):
         self.logger.info(f"Saved {len(self.data)} reviews to {filepath}")
 
 class LetterboxdCrawler(BaseCrawler):
+    """
+    Letterboxd 영화 리뷰 사이트에서 리뷰 데이터를 수집
+    """
     def __init__(self, output_dir: str):
+        """
+        LetterboxdCrawler 객체 초기화
+
+        Arg:
+            output_dir: 수집한 리뷰 데이터를 저장할 디렉퇼 경로
+        """
         super().__init__(output_dir)
         self.base_url = 'https://letterboxd.com/film/zootopia/reviews/'
         self.driver = None
         self.rows=[]
 
     def start_browser(self):
+        """
+        Chorme 브라우저를 실행
+
+        returns:
+            self.driver=WebDriver 인스턴스 생성 후 저장
+        """
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")
         options.add_argument("--disable-blink-features=AutomationControlled")
@@ -299,6 +314,16 @@ class LetterboxdCrawler(BaseCrawler):
         self.driver.implicitly_wait(5)
     
     def scrape_reviews(self):
+        """
+        Letterboxd 리뷰 페이지에서 리뷰 데이터 수집
+        페이지 로딩 실패에 대비하여 재시도 로직 포함
+        'Older' 버튼 클릭을 통해서 페이지 이동
+        500개의 리뷰 수집 후 크롤링 끝
+        별점, 작성날짜, 리뷰 내용 수집
+
+        returns:
+            self.row=수집된 리뷰 데이터 저장 리스트
+        """
         self.start_browser()
         loaded = False
         for _ in range(3):
@@ -395,6 +420,12 @@ class LetterboxdCrawler(BaseCrawler):
         self.driver = None
 
     def save_to_database(self):
+        """
+        수집한 리뷰 데이터 csv 파일로 저장
+
+        returns:
+            csv 파일이 output_dir 경로에 저장
+        """
         os.makedirs(self.output_dir, exist_ok=True)
 
         path = f"{self.output_dir}/reviews_letterboxd.csv"
