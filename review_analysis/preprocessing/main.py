@@ -3,15 +3,18 @@ import glob
 from argparse import ArgumentParser
 from typing import Dict, Type
 from review_analysis.preprocessing.base_processor import BaseDataProcessor
-from review_analysis.preprocessing.processor import Processor
+from review_analysis.preprocessing.imdb_processor import IMDbProcessor
+from review_analysis.preprocessing.letterboxd_processor import LetterboxdProcessor
+from review_analysis.preprocessing.rottentomatoes_processor import RottenTomatoesProcessor
+
 
 
 # 모든 preprocessing 클래스를 예시 형식으로 적어주세요. 
 # key는 "reviews_사이트이름"으로, value는 해당 처리를 위한 클래스
 PREPROCESS_CLASSES: Dict[str, Type[BaseDataProcessor]] = {
-    "reviews_imdb": Processor,
-    "reviews_RottenTomatoes": Processor,
-    "reviews_letterboxd": Processor,
+    "reviews_imdb": IMDbProcessor,
+    "reviews_RottenTomatoes": RottenTomatoesProcessor,
+    "reviews_letterboxd": LetterboxdProcessor,
     # key는 크롤링한 csv파일 이름으로 적어주세요! ex. reviews_naver.csv -> reviews_naver
 }
 

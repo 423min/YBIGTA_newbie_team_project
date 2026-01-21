@@ -208,3 +208,7 @@ __marimo__/
 
 # Mac
 .DS_Store
+
+_backup_local/
+database/preprocessed_*.csv
+__pycache__/
