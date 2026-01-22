@@ -10,6 +10,8 @@ import pandas as pd
 from review_analysis.crawling.base_crawler import BaseCrawler
 from utils.logger import setup_logger
 
+from typing import List, Dict, Any
+
 class RottenTomatoesCrawler(BaseCrawler):
     """
     로튼 토마토(Rotten Tomatoes) 사이트에서 영화 '주토피아(Zootopia)'의 관람객 리뷰를 크롤링하는 클래스.
@@ -30,7 +32,7 @@ class RottenTomatoesCrawler(BaseCrawler):
         self.logger = setup_logger()
         self.url = "https://www.rottentomatoes.com/m/zootopia/reviews/all-audience"
         self.driver = None
-        self.data = []
+        self.data: List[Dict[str, Any]] = []
 
     def start_browser(self):
         """

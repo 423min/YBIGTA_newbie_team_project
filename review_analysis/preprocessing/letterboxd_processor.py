@@ -100,6 +100,10 @@ class LetterboxdProcessor(BaseDataProcessor):
 
         df = df.dropna(subset=["rating", "date", "comment"])
 
+        # "spoiler shield" 리뷰는 이상치로 처리해서 제거
+        spoiler_text = "This review may contain spoilers. I can handle the truth."
+        df = df[~df["comment"].astype(str).str.contains(spoiler_text, regex=False)]
+
         df["raw_word_count"] = df["comment"].astype(str).str.split().str.len()
 
         df = df[df["raw_word_count"] >= 3]

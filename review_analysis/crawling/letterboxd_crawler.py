@@ -8,6 +8,8 @@ import os
 import pandas as pd
 from review_analysis.crawling.base_crawler import BaseCrawler
 
+from typing import List, Dict, Any
+
 class LetterboxdCrawler(BaseCrawler):
     """
     Letterboxd 영화 리뷰 사이트에서 리뷰 데이터를 수집
@@ -22,7 +24,7 @@ class LetterboxdCrawler(BaseCrawler):
         super().__init__(output_dir)
         self.base_url = 'https://letterboxd.com/film/zootopia/reviews/'
         self.driver = None
-        self.data = [] # Changed from rows to data for consistency with other crawlers
+        self.data: List[Dict[str, Any]] = [] 
 
     def start_browser(self):
         """
@@ -34,7 +36,10 @@ class LetterboxdCrawler(BaseCrawler):
         options = webdriver.ChromeOptions()
         
         # Set Brave Browser binary location
-        options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+        #options.binary_location = "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+
+        # Note: 가끔씩 CloudFlare Captcha가 발생할 수 있음
+        # 이 경우 Brave Browser를 사용하여 크롤링을 할 수 있음
 
         # Remove headless for better bot avoidance or debugging if needed, but keeping user config
         # options.add_argument("--headless=new") 
