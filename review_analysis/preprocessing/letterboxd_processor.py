@@ -1,34 +1,43 @@
 from __future__ import annotations
-from langdetect import detect, DetectorFactory
-from langdetect.lang_detect_exception import LangDetectException
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+from langdetect import detect, DetectorFactory # type: ignore
+from langdetect.lang_detect_exception import LangDetectException # type: ignore
+from nltk.corpus import stopwords # type: ignore
+from nltk.stem import WordNetLemmatizer # type: ignore
 import re
 import os
-import nltk
-import pandas as pd
+import nltk # type: ignore
+import pandas as pd # type: ignore
 from review_analysis.preprocessing.base_processor import BaseDataProcessor
 
 from review_analysis.preprocessing.lexicon_loader import load_lexicon
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer # type: ignore
 import numpy as np
 
 class LetterboxdProcessor(BaseDataProcessor):
+    """
+    Letterboxd 리뷰 데이터를 위한 전처리 및 파생 변수 생성 클래스입니다.
+    """
     site_name = "letterboxd"
+
     def run(self) -> None:
         """
-        Letterboxd 리뷰 데이터에 대한 전체 전처리 파이프라인을 실행한다.
-
-        preprocess → feature_engineering → save_to_database 순서로
-        전처리, 파생 변수 생성, 결과 저장을 수행한다.
+        Letterboxd 리뷰 데이터에 대한 전체 전처리 파이프라인을 실행합니다.
+        preprocess → feature_engineering → save_to_database 순서로 진행됩니다.
         """
-        print(f"[INFO] Start preprocessing: {self.site_name}")
+        print(f"[정보] {self.site_name} 전처리 시작")
         self.preprocess()
         self.feature_engineering()
         self.save_to_database()
-        print(f"[INFO] Finished preprocessing: {self.site_name}")
+        print(f"[정보] {self.site_name} 전처리 완료")
 
     def __init__(self, input_path: str, output_path: str):
+        """
+        LetterboxdProcessor 초기화
+
+        Args:
+            input_path: 원본 CSV 파일 경로
+            output_path: 결과 저장 디렉토리
+        """
         super().__init__(input_path, output_path)
         self.df: pd.DataFrame | None = None
 
@@ -37,7 +46,7 @@ class LetterboxdProcessor(BaseDataProcessor):
     
     def nltk_install(self) -> None:
         """
-        NLTK 라이브러리 로컬에 없으면 다운로드하고 불용어, lemmatizer를 준비한다.
+        필요한 NLTK 리소스를 확인하고 없으면 다운로드합니다.
         """
         resources = ["stopwords", "wordnet", "omw-1.4"]
         for i in resources:
@@ -54,20 +63,14 @@ class LetterboxdProcessor(BaseDataProcessor):
 
     def clean_text(self, text: str) -> str:
         """
-        review text를 분석에 적합하게 정제한다.
-        
-        Steps
-        - 소문자 변환
-        - 특수문자 제거 (알파벳과 공백만 유지)
-        - 토큰화 (공백 기준 split)
-        - 불용어 제거
-        - Lemmatization (기본형/표제어로 변환)
+        리뷰 텍스트를 분석에 적합하게 정제합니다.
+        소문자 변환, 특수문자 제거, 불용어 제거, 어간 추출을 수행합니다.
 
         Args:
             text: 원본 리뷰 텍스트
 
         Returns:
-            정제된 리뷰 텍스트 (clean_comment)
+            str: 정제된 리뷰 텍스트
         """
         if not isinstance(text, str):
             return ""
@@ -85,8 +88,7 @@ class LetterboxdProcessor(BaseDataProcessor):
 
     def preprocess(self):
         """
-        원본 CSV를 로드한 뒤 결측치/이상치/비영어 리뷰를 제거하고 clean_comment 및 date 파싱을 수행한다.
-        결과는 self.df에 저장된다.
+        원본 데이터를 로드하여 결측치 처리, 스포일러 방지 문구 제거, 단어 수 필터링, 영어 리뷰 추출 등을 수행합니다.
         """
         self.nltk_install()
 
@@ -112,7 +114,7 @@ class LetterboxdProcessor(BaseDataProcessor):
 
         def detect_language(text: str) -> str:
             """
-            langdetect로 언어를 판별하고, 실패 시 unknown을 반환한다.
+            텍스트의 언어를 판별합니다.
             """
             try:
                 return detect(text)
@@ -133,14 +135,10 @@ class LetterboxdProcessor(BaseDataProcessor):
 
     def feature_engineering(self):
         """
-        전처리된 데이터(self.df)에 파생 변수를 생성한다.
-
-        - year_month: 월 단위(period) 변수
-        - clean_word_count: 정제된 리뷰 단어 수
-        :param self: 설명
+        전처리된 데이터에 파생 변수를 생성합니다.
         """
         if self.df is None:
-            raise ValueError("Run preproces before feature enginieering.")
+            raise ValueError("feature_engineering 실행 전 preprocess를 먼저 실행해야 합니다.")
 
         df = self.df
 
@@ -154,39 +152,37 @@ class LetterboxdProcessor(BaseDataProcessor):
 
     def add_subjectivity_score(self):
         """
-        Calculates subjectivity score for each review using TF-IDF and Lexicon weights.
-        
-        Formula: Sum(TF-IDF(word) * LexiconWeight(word))
+        TF-IDF와 감정 사전을 결합하여 각 리뷰의 주관성 점수를 계산합니다.
+
+        주관성 점수 산출 방식:
+        1. 어휘 사전 구축: MPQA Subjectivity Lexicon을 기반으로 영화 리뷰 도메인에 적합한 단어들을 필터링하고 강도(Strong/Very Strong)별 가중치 부여
+        2. TF-IDF 가중치: L2 정규화를 비활성화하여 단어의 코퍼스 내 희소성(IDF)과 리뷰 내 빈도(TF)를 보존한 절대적 중요도 산출
+        3. 계산식: Sum(단어별 TF-IDF 값 * 사전 가중치) / 정제된 리뷰 단어 수 (리뷰 길이에 따른 편향 제거)
         """
         if self.df is None:
-            raise ValueError("Run preprocess before adding subjectivity score.")
+            raise ValueError("주관성 점수 계산 전 preprocess를 먼저 실행해야 합니다.")
             
         df = self.df
         
-        # Load Lexicon
+        # 어휘 사전 로드
         lexicon = load_lexicon()
         if not lexicon:
-            print("Warning: Lexicon is empty. Subjectivity scores will be 0.")
+            print("[경고] 어휘 사전이 비어 있습니다. 모든 주관성 점수가 0으로 설정됩니다.")
             df["subjectivity_score"] = 0.0
             self.df = df
             return
 
-        # Initialize TF-IDF
-        # Remove vocabulary restriction to include all words
-        # Disable L2 normalization (norm=None) so that values are (TF * IDF), scaling with length.
-        # This allows our manual division by clean_word_count to work as a true "average" calculation.
+        # TF-IDF 초기화
         vectorizer = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b", norm=None)
         
         try:
-            # Fit and transform
-            # Note: TfidfVectorizer with vocabulary will only count words in the keys
+            # TF-IDF 행렬 생성
             tfidf_matrix = vectorizer.fit_transform(df["clean_comment"].astype(str))
             
-            # Get feature names (should verify they match lexicon keys order)
+            # 피처 이름 목록 가져오기
             feature_names = vectorizer.get_feature_names_out()
             
-            # Create a weight vector aligned with features
-            # Strategy: Use Lexicon Value (2.0 or 4.0), else Background (0.5)
+            # 피처 순서에 맞춰 가중치 벡터 생성
             weights = []
             for word in feature_names:
                 lex_weight = lexicon.get(word)
@@ -196,19 +192,16 @@ class LetterboxdProcessor(BaseDataProcessor):
                     weights.append(0.5)
             weights = np.array(weights)
             
-            # Calculate score: Dot product of TF-IDF matrix and Weight vector
-            # (n_samples, n_features) dot (n_features,) -> (n_samples,)
+            # 점수 계산
             raw_scores = tfidf_matrix.dot(weights)
             
-            # Normalize by word count to prevent length bias
-            # Fill 0 word counts with 1 to avoid division by zero (though unlikely due to filtering)
+            # 단어 수로 정규화
             word_counts = df["clean_word_count"].replace(0, 1).values
             
             df["subjectivity_score"] = raw_scores / word_counts
             
         except ValueError as e:
-            # Handle case where vocabulary is empty or no words found
-            print(f"Warning during TF-IDF: {e}. Setting scores to 0.")
+            print(f"[경고] TF-IDF 계산 중 오류 발생: {e}. 점수를 0으로 설정합니다.")
             df["subjectivity_score"] = 0.0
 
         self.df = df
@@ -216,10 +209,10 @@ class LetterboxdProcessor(BaseDataProcessor):
 
     def save_to_database(self):
         """
-        전처리, 파생변수까지 완료된 self.df를 CSV로 저장한다.
+        전처리 및 분석이 완료된 데이터를 CSV 파일로 저장합니다.
         """
         if self.df is None or self.df.empty:
-            raise ValueError("No data to save. Run preprocess first.")
+            raise ValueError("저장할 데이터가 없습니다. 먼저 preprocess를 실행하세요.")
         
         os.makedirs(self.output_dir, exist_ok=True)
 

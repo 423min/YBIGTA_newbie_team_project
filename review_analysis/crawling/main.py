@@ -1,10 +1,18 @@
+import os
+import sys
 from argparse import ArgumentParser
 from typing import Dict, Type
+
+# Project root 추가하여 실행 시 파일 경로 문제 해결
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
 from review_analysis.crawling.base_crawler import BaseCrawler
 from review_analysis.crawling.rotten_tomatoes_crawler import RottenTomatoesCrawler
 from review_analysis.crawling.letterboxd_crawler import LetterboxdCrawler
-from review_analysis.crawling.IMDb_crawler import IMDbCrawler
+from review_analysis.crawling.imdb_crawler import IMDbCrawler
 
 CRAWLER_CLASSES: Dict[str, Type[BaseCrawler]] = {
 #    "naver_movie": NaverMovieCrawler,

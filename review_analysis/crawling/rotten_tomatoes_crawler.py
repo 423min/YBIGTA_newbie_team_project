@@ -6,7 +6,7 @@ import time
 import re
 import datetime
 import os
-import pandas as pd
+import pandas as pd # type: ignore
 from review_analysis.crawling.base_crawler import BaseCrawler
 from utils.logger import setup_logger
 
@@ -14,7 +14,8 @@ from typing import List, Dict, Any
 
 class RottenTomatoesCrawler(BaseCrawler):
     """
-    로튼 토마토(Rotten Tomatoes) 사이트에서 영화 '주토피아(Zootopia)'의 관람객 리뷰를 크롤링하는 클래스.
+    로튼 토마토(Rotten Tomatoes) 사이트에서 영화 '주토피아(Zootopia)'의 관람객 리뷰를 수집하여 CSV 파일로 저장하는 클래스.
+    평점, 작성일, 리뷰 내용을 포함합니다.
 
     Attributes:
         - driver (webdriver.Chrome): 크롬 웹드라이버 인스턴스.
@@ -37,12 +38,6 @@ class RottenTomatoesCrawler(BaseCrawler):
     def start_browser(self):
         """
         크롬 웹드라이버를 설정하고 실행하는 메소드.
-
-        Args:
-            None
-        
-        Returns:
-            None
         """
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_experimental_option("detach", True)
@@ -59,22 +54,22 @@ class RottenTomatoesCrawler(BaseCrawler):
         다양한 형식의 날짜 문자열(상대 시간, 부분 날짜, 전체 날짜)을 'YYYY.MM.DD.' 형식으로 파싱하는 메소드.
 
         Args:
-            - date_str (str): 원본 날짜 문자열 (예: "Jan 8", "8h ago", "12/12/2024").
-            - current_year (int): 현재 처리 중인 연도 (부분 날짜 파싱 시 사용).
+            date_str (str): 원본 날짜 문자열 (예: "Jan 8", "8h ago", "12/12/2024").
+            current_year (int): 현재 처리 중인 연도 (부분 날짜 파싱 시 사용).
 
         Returns:
-            - (tuple): (파싱된 날짜 문자열, 업데이트된 연도) 튜플 반환.
+            tuple: (파싱된 날짜 문자열, 업데이트된 연도) 튜플 반환.
         """
         today = datetime.datetime.now()
         
         try:
             date_str = date_str.strip()
             
-            # Case 1: Relative hours ("8h ago")
+            # 케이스 1: 상대 시간 (시간 단위, 예: "8h ago")
             if 'h' in date_str:
                 return today.strftime("%Y.%m.%d."), current_year
                 
-            # Case 2: Relative days ("6d ago")
+            # 케이스 2: 상대 시간 (일 단위, 예: "6d ago")
             if 'd' in date_str:
                 days_ago_match = re.search(r'(\d+)d', date_str)
                 if days_ago_match:
@@ -82,52 +77,46 @@ class RottenTomatoesCrawler(BaseCrawler):
                     target_date = today - datetime.timedelta(days=days_ago)
                     return target_date.strftime("%Y.%m.%d."), current_year
             
-            # Case 3: Full Date ("12/12/2024")
+            # 케이스 3: 전체 날짜 (예: "12/12/2024")
             if re.match(r'\d{1,2}/\d{1,2}/\d{4}', date_str):
                 parsed_date = datetime.datetime.strptime(date_str, "%m/%d/%Y")
                 return parsed_date.strftime("%Y.%m.%d."), parsed_date.year
 
-            # Case 4: Partial Date ("Jan 8")
-            # Remove "Verified" or other badges if present
+            # 케이스 4: 부분 날짜 (예: "Jan 8")
+            # 배지 텍스트 제거
             date_str = re.sub(r'Verified|Super Reviewer', '', date_str).strip()
             
             try:
-                # Parse "Jan 8"
+                # "Jan 8" 형식 파싱
                 parsed_date = datetime.datetime.strptime(date_str, "%b %d")
                 final_date = parsed_date.replace(year=current_year)
                 return final_date.strftime("%Y.%m.%d."), current_year
                 
             except ValueError:
-                return f"{current_year}.{date_str}", current_year # Fallback
+                return f"{current_year}.{date_str}", current_year # 폴백
                 
         except Exception as e:
-            self.logger.error(f"Error parsing date '{date_str}': {e}")
+            self.logger.error(f"날짜 파싱 오류 '{date_str}': {e}")
             return date_str, current_year
 
     def scrape_reviews(self):
         """
         로튼 토마토 사이트에서 리뷰를 크롤링하는 메인 로직을 수행하는 메소드. 
         'Load More' 버튼을 클릭하며 모든 리뷰를 수집함.
-
-        Args:
-            None
-
-        Returns:
-            None
         """
         self.start_browser()
-        self.logger.info(f"Navigating to {self.url}")
+        self.logger.info(f"{self.url}로 이동 중")
         self.driver.get(self.url)
-        time.sleep(3) # Wait for initial load
+        time.sleep(3) # 초기 로딩 대기
 
-        # Handle Cookie Popup
+        # 쿠키 팝업 처리
         try:
             cookie_btn = self.driver.find_element(By.ID, "onetrust-accept-btn-handler")
             cookie_btn.click()
-            self.logger.info("Clicked Cookie 'Continue' button")
+            self.logger.info("쿠키 승인 버튼 클릭됨")
             time.sleep(1)
         except:
-            self.logger.info("No cookie popup found or handled")
+            self.logger.info("쿠키 팝업이 없거나 이미 처리됨")
 
         processed_indices = set()
         current_year = 2026
@@ -135,7 +124,7 @@ class RottenTomatoesCrawler(BaseCrawler):
         
         while True:
             try:
-                # Find all review cards
+                # 모든 리뷰 카드 찾기
                 reviews = self.driver.find_elements(By.CSS_SELECTOR, "review-card")
                 new_reviews_found = False
                 
@@ -144,23 +133,22 @@ class RottenTomatoesCrawler(BaseCrawler):
                         continue
                     
                     try:
-                        # Extract data
-                        # Try multiple selectors for rating
+                        # 데이터 추출
+                        # 평점 추출 (여러 선택자 시도)
                         try:
                             rating_element = review.find_element(By.CSS_SELECTOR, "[slot='rating']")
                             rating = rating_element.get_attribute("score") or rating_element.get_attribute("rating") or ""
                         except:
-                            rating = "" # Some reviews might not have a rating
+                            rating = "" # 일부 리뷰는 평점이 없을 수 있음
                         
                         try:
                             date_element = review.find_element(By.CSS_SELECTOR, "[slot='timestamp']")
                             raw_date = date_element.text
                             
-                            # Heuristic to detect year change for partial dates (e.g. Jan -> Dec)
-                            # Only applies if we are in partial date territory (no digits like /2016)
+                            # 부분 날짜에서 연도 변경 감지 (예: 1월 -> 12월로 넘어갈 때)
                             if "/" not in raw_date:
                                 try:
-                                    current_month = 1 # default
+                                    current_month = 1 # 기본값
                                     if "Jan" in raw_date: current_month = 1
                                     elif "Feb" in raw_date: current_month = 2
                                     elif "Mar" in raw_date: current_month = 3
@@ -175,10 +163,10 @@ class RottenTomatoesCrawler(BaseCrawler):
                                     elif "Dec" in raw_date: current_month = 12
                                     else: current_month = last_month_num 
 
-                                    # If we jumped from a low month (e.g. Jan=1) to a high month (e.g. Dec=12)
+                                    # 월이 급격히 증가하면 연도가 바뀐 것으로 간주
                                     if current_month > last_month_num + 6:
                                          current_year -= 1
-                                         self.logger.info(f"Year decremented to {current_year}")
+                                         self.logger.info(f"연도가 {current_year}년으로 변경되었습니다.")
                                     
                                     last_month_num = current_month
                                 except:
@@ -187,7 +175,7 @@ class RottenTomatoesCrawler(BaseCrawler):
                             date, current_year = self.parse_date(raw_date, current_year)
                             
                         except Exception as e:
-                            self.logger.error(f"Date error: {e}")
+                            self.logger.error(f"날짜 처리 오류: {e}")
                             date = ""
 
                         try:
@@ -196,8 +184,8 @@ class RottenTomatoesCrawler(BaseCrawler):
                         except:
                             comment = ""
                         
-                        if comment or rating: # Only save if there's real content
-                            self.logger.info(f"Review {i+1}: {rating} | {date}")
+                        if comment or rating: # 유효한 내용이 있는 경우만 저장
+                            self.logger.info(f"리뷰 {i+1}: {rating} | {date}")
                             self.data.append({
                                 'rating': rating,
                                 'date': date,
@@ -208,19 +196,19 @@ class RottenTomatoesCrawler(BaseCrawler):
                         processed_indices.add(i)
 
                     except Exception as e:
-                        self.logger.error(f"Error parsing review {i}: {e}")
+                        self.logger.error(f"{i}번 리뷰 파싱 중 오류 발생: {e}")
                 
-                # Intermediate save
+                # 중간 저장
                 if new_reviews_found and len(self.data) % 50 == 0:
                     self.save_to_database()
 
-                # Find and Click 'Load More'
+                # 'Load More' 버튼 찾기 및 클릭
                 try:
                     load_more_btn = None
                     try:
                          load_more_btn = self.driver.find_element(By.CSS_SELECTOR, "rt-button[data-pagemediareviewsmanager='loadMoreBtn:click']")
                     except:
-                        # Fallback: check text content
+                        # 폴백: 텍스트 내용으로 확인
                         buttons = self.driver.find_elements(By.TAG_NAME, "rt-button")
                         for btn in buttons:
                             if "Load More" in btn.text:
@@ -228,41 +216,30 @@ class RottenTomatoesCrawler(BaseCrawler):
                                 break
                     
                     if load_more_btn:
-                        # Scroll to button
+                        # 버튼 위치로 스크롤
                         self.driver.execute_script("arguments[0].scrollIntoView(true);", load_more_btn)
                         time.sleep(1)
-                        # Click
+                        # 클릭
                         self.driver.execute_script("arguments[0].click();", load_more_btn)
-                        self.logger.info("Clicked 'Load More'")
-                        time.sleep(3) # Wait for new reviews to load
+                        self.logger.info("'Load More' 클릭됨")
+                        time.sleep(3) # 새 리뷰 로딩 대기
                     else:
-                        self.logger.info("No 'Load More' button found.")
+                        self.logger.info("'Load More' 버튼을 찾을 수 없습니다.")
                         break
                 except Exception as e:
-                    self.logger.info(f"Load More error: {e}")
+                    self.logger.info(f"'Load More' 처리 중 오류: {e}")
                     break
-
-                # Safety break for testing (optional, remove if want ALL)
-                # if len(self.data) >= 600:
-                #     self.logger.info("Reached target review count.")
-                #     break
                     
             except Exception as e:
-                self.logger.error(f"Critical error in scraping loop: {e}")
+                self.logger.error(f"크롤링 루프 중 치명적 오류 발생: {e}")
                 break
 
     def save_to_database(self):
         """
         수집된 리뷰 데이터를 CSV 파일로 저장하는 메소드.
-
-        Args:
-            None
-
-        Returns:
-            None
         """
         if not self.data:
-            self.logger.warning("No data to save.")
+            self.logger.warning("저장할 데이터가 없습니다.")
             return
 
         if not os.path.exists(self.output_dir):
@@ -273,4 +250,4 @@ class RottenTomatoesCrawler(BaseCrawler):
         
         df = pd.DataFrame(self.data)
         df.to_csv(filepath, index=False, encoding='utf-8-sig')
-        self.logger.info(f"Saved {len(self.data)} reviews to {filepath}")
+        self.logger.info(f"{len(self.data)}개의 리뷰를 {filepath}에 저장 완료")

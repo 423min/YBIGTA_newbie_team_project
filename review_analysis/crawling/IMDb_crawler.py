@@ -18,8 +18,19 @@ from review_analysis.crawling.base_crawler import BaseCrawler
 
 class IMDbCrawler(BaseCrawler):
     """
-    Collects reviews for Zootopia (2016) from IMDb and saves them as a CSV file,
-    including ratings, dates, and review content.
+    IMDb 사이트에서 영화 '주토피아(Zootopia)'의 리뷰를 수집하여 CSV 파일로 저장하는 클래스.
+    평점, 작성일, 리뷰 내용을 포함합니다.
+
+    Attributes:
+        - logger (logging.Logger): 로깅을 위한 로거 인스턴스.
+        - base_url (str): 크롤링 대상인 IMDb 리뷰 페이지 URL.
+        - driver (webdriver.Chrome): Selenium 웹드라이버 인스턴스.
+    
+    Methods:
+        - start_browser: 브라우저를 실행하고 대상 URL로 이동.
+        - load_until_target: 'Load More' 버튼을 클릭하여 목표 개수만큼 리뷰를 로드.
+        - scrape_reviews: 로드된 페이지에서 리뷰 데이터를 추출.
+        - save_to_database: 수집된 데이터를 CSV 파일로 저장.
     """
     def __init__(self, output_dir: str):
         super().__init__(output_dir)
@@ -29,7 +40,7 @@ class IMDbCrawler(BaseCrawler):
         
     def start_browser(self):
         """
-        Starts the browser and navigates to the IMDb reviews page.
+        브라우저를 시작하고 IMDb 리뷰 페이지로 이동합니다.
         """
         self.driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=Options())
         self.driver.get(self.base_url)
@@ -39,20 +50,25 @@ class IMDbCrawler(BaseCrawler):
 
     def load_until_target(self, target: int = 500, max_no_growth: int = 5, timeout: int = 10) -> int:
         """
-        Repeatedly clicks the "Load More" button on the IMDb reviews page to load reviews
-        up to the specified target count, verifying actual increases in review cards.
+        IMDb 리뷰 페이지의 'Load More' 버튼을 반복적으로 클릭하여 
+        지정된 목표 개수까지 리뷰를 로드하고, 실제 카드 수가 증가하는지 확인합니다.
+
+        Args:
+            target: 로드하고자 하는 목표 리뷰 수.
+            max_no_growth: 데이터 증가가 없을 때 최대 시도 횟수.
+            timeout: 각 대기 단계에서의 타임아웃 시간.
 
         Returns:
-            int: The final number of loaded review cards.
+            int: 최종적으로 로드된 리뷰 카드의 수.
         """
         wait = WebDriverWait(self.driver, timeout)
 
         def count_cards() -> int:
             """
-            Counts the number of review cards currently loaded on the IMDb reviews page.
+            현재 IMDb 리뷰 페이지에 로드된 리뷰 카드의 개수를 셉니다.
 
             Returns:
-                int: The number of review card elements found in the DOM.
+                int: DOM 내에서 발견된 리뷰 카드 요소의 개수.
             """
             return len(self.driver.find_elements(By.CSS_SELECTOR, 'div[data-testid="review-card-parent"]'))
 
@@ -65,6 +81,7 @@ class IMDbCrawler(BaseCrawler):
             return 0
 
         while last_count < target and no_growth < max_no_growth:
+            # 페이지 하단으로 스크롤
             self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
             load_more = None
@@ -73,6 +90,7 @@ class IMDbCrawler(BaseCrawler):
                 (By.XPATH, "//button[contains(@class,'ipc-see-more__button')]"),
             ]
 
+            # 'Load More' 버튼 찾기
             for by, sel in selectors:
                 try:
                     load_more = wait.until(EC.presence_of_element_located((by, sel)))
@@ -84,6 +102,7 @@ class IMDbCrawler(BaseCrawler):
                 break
 
             try:
+                # 버튼이 화면 중앙에 오도록 스크롤 후 클릭
                 self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", load_more)
                 time.sleep(0.3)
                 try:
@@ -94,6 +113,7 @@ class IMDbCrawler(BaseCrawler):
                 break
 
             try:
+                # 새로운 카드가 로드될 때까지 대기
                 wait.until(lambda d: count_cards() > last_count)
                 new_count = count_cards()
                 last_count = new_count
@@ -106,13 +126,12 @@ class IMDbCrawler(BaseCrawler):
 
     def scrape_reviews(self):
         """
-        Scrapes reviews from the IMDb reviews page.
+        IMDb 리뷰 페이지에서 리뷰 데이터를 크롤링합니다.
 
-        This method loads reviews by interacting with the "Load More" button,
-        extracts review ratings, dates, and content from the page,
-        and stores the collected data in a pandas DataFrame.
+        'Load More' 버튼을 조작하여 리뷰를 충분히 로드한 뒤,
+        페이지 내에서 평점, 날짜, 내용을 추출하여 pandas DataFrame으로 저장합니다.
 
-        The scraping process stops once the target number of valid reviews is collected.
+        목표 개수의 유효한 리뷰가 수집되면 중단합니다.
         """
         self.start_browser()
 
@@ -122,6 +141,7 @@ class IMDbCrawler(BaseCrawler):
         loaded = self.load_until_target(target=target_load, max_no_growth=6, timeout=10)
         self.logger.info(f"로드된 리뷰 카드 수: {loaded}")
 
+        # BeautifulSoup을 사용하여 로드된 HTML 파싱
         soup = BeautifulSoup(self.driver.page_source, "html.parser")
 
         items = soup.select('div[data-testid="review-card-parent"]')
@@ -135,10 +155,10 @@ class IMDbCrawler(BaseCrawler):
         for i in range(n):
             item = items[i]
 
-            # date
+            # 날짜 추출
             date = dates[i].get_text(strip=True)
 
-            # rating
+            # 평점 추출
             rating = None
             rating_tag = item.select_one('span[aria-label*="rating"]') or item.select_one("span.review-rating")
             if rating_tag and rating_tag.has_attr("aria-label"):
@@ -147,7 +167,7 @@ class IMDbCrawler(BaseCrawler):
                     m = re.search(r"\d+(\.\d+)?", rating_tag["aria-label"])
                 rating = m.group(1) if (m and m.lastindex) else (m.group() if m else None)
 
-            # content
+            # 내용 추출
             content_tag = item.select_one('div[data-testid="review-overflow"]') or item.select_one("div.ipc-overflowText")
             content = content_tag.get_text(strip=True) if content_tag else None
 
@@ -165,8 +185,8 @@ class IMDbCrawler(BaseCrawler):
 
         def _parse_imdb_date(s: str) -> datetime.datetime | None:
             """
-            Attempts to parse an IMDb review date string using multiple possible formats
-            and converts it into a datetime object. Returns None if parsing fails.
+            다양한 형식의 날짜 문자열을 datetime 객체로 변환을 시도합니다.
+            실패 시 None을 반환합니다.
             """
             s = (s or "").strip()
             for fmt in ("%d %B %Y", "%B %d, %Y", "%d %b %Y", "%b %d, %Y"):
@@ -176,6 +196,7 @@ class IMDbCrawler(BaseCrawler):
                     continue
             return None
                
+        # 날짜 형식 변환 및 정렬
         self.data["date_dt"] = self.data["date"].apply(_parse_imdb_date)
         self.data = self.data.dropna(subset=["date_dt"])
         self.data = self.data.sort_values("date_dt", ascending=False)
@@ -186,9 +207,9 @@ class IMDbCrawler(BaseCrawler):
 
     def save_to_database(self):
         """
-        Saves the collected review data to a CSV file.
+        수집된 리뷰 데이터를 CSV 파일로 저장합니다.
         """
-        self.logger.info("save_to_database() called")
+        self.logger.info("save_to_database() 호출됨")
 
         if getattr(self, "data", None) is None or self.data.empty:
             self.logger.warning("저장할 데이터가 없습니다. (self.data가 비어있음)")
