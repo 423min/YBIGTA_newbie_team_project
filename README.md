@@ -87,7 +87,7 @@
 - Letterboxd
 
   <img width="2990" height="989" alt="image" src="https://github.com/user-attachments/assets/16ce0cd8-74bd-467d-a0ed-324de11c6838" />
-> 세 사이트의 월별 리뷰수에 대한 그래프이다. ? 세 사이트 크롤링 날짜 기준 ?
+> 세 사이트의 월별 리뷰수에 대한 그래프이다.
 3. Text length distribution
 - Rotten Tomatoes
 
@@ -122,7 +122,22 @@
 - 정제된 리뷰 텍스트의 단어 수를 나타내는 clean_word_count 변수 생성
 => 사이트별 리뷰 길이 차이 및 리뷰 스타일 비교 가능
 ## 📊 사이트 간 비교분석 결과
+- 주관성 분포 비교
 
+  <img width="800" height="500" alt="boxplot" src="https://github.com/user-attachments/assets/ad365f0b-f55a-4bad-b561-45070aae544a" />
+> boxplot을 확인해보면 IMDb < Letterboxd < RottenTomatoes의 순으로 주관성 점수의 중앙값이 크다는 사실을 파악할 수 있었다. 즉, 해당 순서대로 점점 주관적인 리뷰가 많다는 것을 알 수 있다. IMDb는 전반적으로 설명적이며 객관적인 리뷰가 많고, Letterboxd는 감정과 비평의 혼합형의 리뷰가 많으며, RottenTomatoes의 경우에는 주관적이며 감정 표현이 뚜렷한 리뷰의 비중이 높다는 것을 알 수 있다. IMDb의 경우 박스가 좁은 것으로 보아 리뷰 스타일이 비교적 균질적이라는 것을 알 수 있다.
+- 핵심 키워드 비교
+
+   <img width="1600" height="1200" alt="top_15_lexicon_words_IMDB" src="https://github.com/user-attachments/assets/f01ee39b-a56d-49a4-b90c-d48886420d20" />
+   <img width="1600" height="1200" alt="top_15_lexicon_words_Letterboxd" src="https://github.com/user-attachments/assets/a0795e25-175a-4ed1-b026-c05a3ee4c554" />
+   <img width="1600" height="1200" alt="top_15_lexicon_words_RottenTomatoes" src="https://github.com/user-attachments/assets/d8cf7e4e-d9ab-4a20-bed9-4d952588932b" />
+ > 비교분석을 위해 먼저 lexicon 사전을 직접 정의하였다. lexicon 사전에 주관성을 나타내줄 수 있는 단어들을 정의해두었다. 이를 통해 관측하였을 때, IMDb에서 주관성을 나타내는 데에 가장 많은 영향을 미친 단어는 like, great, good 등이 있다. Letterboxd에서도 마찬가지로 like, good, great 순으로 영향을 미쳤지만 like의 비중이 매우 높은 것을 확인할 수 있다. RottenTomatoes에서는 great, good, best 순으로 영향을 미쳤으며, 타 사이트에서 1순위였던 like가 4순위인 것을 확인할 수 있었다.
+- 주토피아2 개봉 시점 리뷰 변화
+
+  <img width="3600" height="1800" alt="daily_count_IMDB" src="https://github.com/user-attachments/assets/433b14e9-b5de-4880-922b-8cdb0071aa31" />
+  <img width="3600" height="1800" alt="daily_count_Letterboxd" src="https://github.com/user-attachments/assets/d6d7cf01-78b3-4aa4-9336-a65ab89e9715" />
+  <img width="3600" height="1800" alt="daily_count_RottenTomatoes" src="https://github.com/user-attachments/assets/ff368597-b622-43c3-9345-37ec35b57ee8" />
+> 주토피아2 개봉 시점인 25년 11월 26일을 기준으로 리뷰 수의 시간적 변화를 관찰하였다. 세 사이트 모두 개봉 시점을 전후로 리뷰 활동이 집중되는 향상을 보였다. 특히 개봉 직후의 리뷰 수가 가장 높으며, 이후에는 급격하게 감소하기 시작한다. IMDb의 경우에는 개봉 초기에는 비교적 높은 리뷰 수가 관측되지만 이후에는 장기간에 걸쳐 낮은 수준의 리뷰 수가 유지되었다. Letterboxd의 경우 가장 극단적인 리뷰 집중 현상이 관측된다. 주토피아2 개봉 시점에 급격하게 증가하였고 나머지 기간에는 매우 적은 리뷰 수가 관측된다. RottenTomatoes의 경우 개봉 시점 등 특정 시점에서는 뚜렷하게 리뷰 수가 많지만 장기적으로는 낮은 수준에서 지속적으로 리뷰가 생성된다.
 ## *👥 GitHub 협업 과제 👥*
 > Git 협업 규칙 설정하기
 ---
