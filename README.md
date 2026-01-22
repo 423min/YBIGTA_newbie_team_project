@@ -53,6 +53,8 @@
 > -> 수집 데이터 csv 파일 저장
 
 > *타 사이트에 비해 리뷰 수가 현저히 많아서 newest 버전과 oldest 버전을 추출*
+
+> *Letterboxd 사이트의 경우 캡챠가 발생하는 경우가 존재해서 우회하는 방식으로 코드 작성해두었습니다.*
 ## 🎬 IMDbCrawler
 - 크롤링 링크: https://www.imdb.com/title/tt2948356/reviews/
 - 데이터 형식: rating(10점 기준), date, content를 csv파일로 저장
@@ -121,6 +123,13 @@
 
 - 정제된 리뷰 텍스트의 단어 수를 나타내는 clean_word_count 변수 생성
 => 사이트별 리뷰 길이 차이 및 리뷰 스타일 비교 가능
+
+* TF-IDF 텍스트 벡터화 및 가중치 생성 *
+
+* 주관성 점수 subjectivity_score 산출 *
+  
+   1. 어휘 사전 구축: MPQA Subjectivity Lexicon을 기반으로 영화 리뷰 도메인에 적합한 단어들을 필터링하고 주관성 강도(Strong/Very Strong)별 가중치 부여
+   2. 계산식: Sum(단어별 TF-IDF 값 * 사전 가중치) / 정제된 리뷰 단어 수 (리뷰 길이에 따른 편향 제거)
 ## 📊 사이트 간 비교분석 결과
 - 주관성 분포 비교
 
@@ -137,7 +146,7 @@
   <img width="3600" height="1800" alt="daily_count_IMDB" src="https://github.com/user-attachments/assets/433b14e9-b5de-4880-922b-8cdb0071aa31" />
   <img width="3600" height="1800" alt="daily_count_Letterboxd" src="https://github.com/user-attachments/assets/d6d7cf01-78b3-4aa4-9336-a65ab89e9715" />
   <img width="3600" height="1800" alt="daily_count_RottenTomatoes" src="https://github.com/user-attachments/assets/ff368597-b622-43c3-9345-37ec35b57ee8" />
-> 주토피아2 개봉 시점인 25년 11월 26일을 기준으로 리뷰 수의 시간적 변화를 관찰하였다. 세 사이트 모두 개봉 시점을 전후로 리뷰 활동이 집중되는 향상을 보였다. 특히 개봉 직후의 리뷰 수가 가장 높으며, 이후에는 급격하게 감소하기 시작한다. IMDb의 경우에는 개봉 초기에는 비교적 높은 리뷰 수가 관측되지만 이후에는 장기간에 걸쳐 낮은 수준의 리뷰 수가 유지되었다. Letterboxd의 경우 가장 극단적인 리뷰 집중 현상이 관측된다. 주토피아2 개봉 시점에 급격하게 증가하였고 나머지 기간에는 매우 적은 리뷰 수가 관측된다. RottenTomatoes의 경우 개봉 시점 등 특정 시점에서는 뚜렷하게 리뷰 수가 많지만 장기적으로는 낮은 수준에서 지속적으로 리뷰가 생성된다.
+> 주토피아2 개봉 시점인 25년 11월 26일을 기준으로 리뷰 수의 시간적 변화를 관찰하였다. 세 사이트 모두 개봉 시점을 전후로 리뷰 활동이 집중되는 양상을 보였다. 특히 개봉 직후의 리뷰 수가 가장 높으며, 이후에는 급격하게 감소하기 시작한다. IMDb의 경우에는 개봉 초기에는 비교적 높은 리뷰 수가 관측되지만 이후에는 장기간에 걸쳐 낮은 수준의 리뷰 수가 유지되었다. RottenTomatoes의 경우 개봉 시점 등 특정 시점에서는 뚜렷하게 리뷰 수가 많지만 장기적으로는 낮은 수준에서 지속적으로 리뷰가 생성된다. 즉, 두 사이트 모두 주토피아2 라는 특정한 이벤트가 발생하였을 때 리뷰수가 급격히 증가하는 양상을 보이고 있다.
 ## *👥 GitHub 협업 과제 👥*
 > Git 협업 규칙 설정하기
 ---
