@@ -8,7 +8,9 @@ import os
 import nltk
 import pandas as pd
 from review_analysis.preprocessing.base_processor import BaseDataProcessor
-
+from review_analysis.preprocessing.lexicon_loader import load_lexicon
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
 class Processor(BaseDataProcessor):
     def __init__(self, input_path: str, output_path: str):
         super().__init__(input_path, output_path)
@@ -127,6 +129,70 @@ class Processor(BaseDataProcessor):
         df["clean_word_count"] = df["clean_comment"].astype(str).str.split().str.len()
 
         self.df = df
+        
+        self.add_subjectivity_score()
+
+
+    def add_subjectivity_score(self):
+        """
+        Calculates subjectivity score for each review using TF-IDF and Lexicon weights.
+        
+        Formula: Sum(TF-IDF(word) * LexiconWeight(word))
+        """
+        if self.df is None:
+            raise ValueError("Run preprocess before adding subjectivity score.")
+            
+        df = self.df
+        
+        # Load Lexicon
+        lexicon = load_lexicon()
+        if not lexicon:
+            print("Warning: Lexicon is empty. Subjectivity scores will be 0.")
+            df["subjectivity_score"] = 0.0
+            self.df = df
+            return
+
+        # Initialize TF-IDF
+        # Remove vocabulary restriction to include all words
+        # Disable L2 normalization (norm=None) so that values are (TF * IDF), scaling with length.
+        # This allows our manual division by clean_word_count to work as a true "average" calculation.
+        vectorizer = TfidfVectorizer(token_pattern=r"(?u)\b\w+\b", norm=None)
+        
+        try:
+            # Fit and transform
+            # Note: TfidfVectorizer with vocabulary will only count words in the keys
+            tfidf_matrix = vectorizer.fit_transform(df["clean_comment"].astype(str))
+            
+            # Get feature names (should verify they match lexicon keys order)
+            feature_names = vectorizer.get_feature_names_out()
+            
+            # Create a weight vector aligned with features
+            # Strategy: Use Lexicon Value (2.0 or 4.0), else Background (0.5)
+            weights = []
+            for word in feature_names:
+                lex_weight = lexicon.get(word)
+                if lex_weight:
+                    weights.append(lex_weight)
+                else:
+                    weights.append(0.5)
+            weights = np.array(weights)
+            
+            # Calculate score: Dot product of TF-IDF matrix and Weight vector
+            # (n_samples, n_features) dot (n_features,) -> (n_samples,)
+            raw_scores = tfidf_matrix.dot(weights)
+            
+            # Normalize by word count to prevent length bias
+            # Fill 0 word counts with 1 to avoid division by zero (though unlikely due to filtering)
+            word_counts = df["clean_word_count"].replace(0, 1).values
+            
+            df["subjectivity_score"] = raw_scores / word_counts
+            
+        except ValueError as e:
+            # Handle case where vocabulary is empty or no words found
+            print(f"Warning during TF-IDF: {e}. Setting scores to 0.")
+            df["subjectivity_score"] = 0.0
+
+        self.df = df
 
 
     def save_to_database(self):
@@ -141,7 +207,8 @@ class Processor(BaseDataProcessor):
         base = os.path.splitext(os.path.basename(self.input_path))[0]
         site = base.replace("reviews_", "")
 
-        filename = f"preprocessed_reviews_{site}.csv"
+        # filename = f"preprocessed_reviews_new_{site}.csv" 
+        filename = f"preprocessed_reviews_{site}.csv" 
         out_file = os.path.join(self.output_dir, filename)
 
         self.df.to_csv(out_file, index=False, encoding="utf-8-sig")
