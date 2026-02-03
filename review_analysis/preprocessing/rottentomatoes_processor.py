@@ -83,14 +83,17 @@ class RottenTomatoesProcessor(BaseDataProcessor):
         return " ".join(tokens)
     
 
-    def preprocess(self):
+    def preprocess(self, df: pd.DataFrame | None = None):
         """
         원본 CSV를 로드한 뒤 결측치/이상치/비영어 리뷰를 제거하고 clean_comment 및 date 파싱을 수행한다.
         결과는 self.df에 저장된다.
         """
         self.nltk_install()
 
-        df = pd.read_csv(self.input_path)
+        if df is None:
+            df = pd.read_csv(self.input_path)
+        else:
+            df = df.copy()
 
         if "comment" not in df.columns and "content" in df.columns:
             df = df.rename(columns={"content": "comment"})

@@ -1,33 +1,46 @@
-import json
-
-from typing import Dict, Optional
-
+from sqlalchemy.orm import Session
+from typing import Optional
 from app.user.user_schema import User
-from app.config import USER_DATA
+from sqlalchemy import text
 
 class UserRepository:
-    def __init__(self) -> None:
-        self.users: Dict[str, dict] = self._load_users()
-
-    def _load_users(self) -> Dict[str, Dict]:
-        try:
-            with open(USER_DATA, "r") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            raise ValueError("File not found")
+    def __init__(self, db:Session) -> None:
+        self.db = db
 
     def get_user_by_email(self, email: str) -> Optional[User]:
-        user = self.users.get(email)
-        return User(**user) if user else None
+        row = self.db.execute(
+            text("SELECT email, password, username FROM users WHERE email=:e"),
+            {"e": email},
+        ).fetchone()
+
+        if row is None:
+            return None
+        return User(email=row[0], password=row[1], username=row[2])
 
     def save_user(self, user: User) -> User: 
-        self.users[user.email] = user.model_dump()
-        with open(USER_DATA, "w") as f:
-            json.dump(self.users, f)
+        exists = self.db.execute(
+            text("SELECT 1 FROM users WHERE email=:e"),
+            {"e": user.email},
+        ).fetchone()
+
+        if exists:
+            self.db.execute(
+                text("UPDATE users SET password=:p, username=:u WHERE email=:e"),
+                {"e": user.email, "p": user.password, "u": user.username},
+            )
+        else:
+            self.db.execute(
+                text("INSERT INTO users (email, password, username) VALUES (:e,:p,:u)"),
+                {"e": user.email, "p": user.password, "u": user.username},
+            )
+
+        self.db.commit()
         return user
 
     def delete_user(self, user: User) -> User:
-        del self.users[user.email]
-        with open(USER_DATA, "w") as f:
-            json.dump(self.users, f)
+        self.db.execute(
+            text("DELETE FROM users WHERE email=:e"),
+            {"e": user.email},
+        )
+        self.db.commit()
         return user
