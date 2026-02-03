@@ -86,13 +86,16 @@ class LetterboxdProcessor(BaseDataProcessor):
         return " ".join(tokens)
     
 
-    def preprocess(self):
+    def preprocess(self, df: pd.DataFrame | None = None):
         """
         원본 데이터를 로드하여 결측치 처리, 스포일러 방지 문구 제거, 단어 수 필터링, 영어 리뷰 추출 등을 수행합니다.
         """
         self.nltk_install()
 
-        df = pd.read_csv(self.input_path)
+        if df is None:
+            df = pd.read_csv(self.input_path)
+        else:
+            df = df.copy()
 
         if "comment" not in df.columns and "content" in df.columns:
             df = df.rename(columns={"content": "comment"})

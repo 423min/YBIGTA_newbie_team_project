@@ -5,8 +5,11 @@ import os
 
 from app.user.user_router import user
 from app.config import PORT
+from app.review.review_router import router as review_router
 
 app = FastAPI()
+app.include_router(user)
+app.include_router(review_router)
 static_path = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=static_path), name="static")
 
