@@ -1,0 +1,13 @@
+.env
+.env.*
+__pycache__/
+*.pyc
+.git/
+.venv/
+venv/
+aws/
+*.pem
+.DS_Store
+.idea/
+.vscode/
+pytest_cache/
