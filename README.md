@@ -166,6 +166,9 @@
 - review_and_merged
   
   <img width="569" height="709" alt="스크린샷 2026-01-22 134601" src="https://github.com/user-attachments/assets/e1c5a021-aee5-4312-a9b3-d8d403f619e5" />
+- github_action
 
+  <img width="1492" height="472" alt="github_action" src="https://github.com/user-attachments/assets/983a9ff7-4191-4421-807e-755c544b832f" />
+  
 ## 📖 Docker hub 주소
 - https://hub.docker.com/repository/docker/ilop0624/ybigta_team/general
