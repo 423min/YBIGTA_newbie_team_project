@@ -1,0 +1,30 @@
+{
+  "title": "Zootopia",
+  "year": 2016,
+  "director": ["Byron Howard", "Rich Moore"],
+  "co_director": "Jared Bush",
+  "genre": ["Animation", "Adventure", "Comedy"],
+  "runtime_minutes": 108,
+  "plot_summary": "In the city of Zootopia, where animals of all species coexist, optimistic rabbit Judy Hopps becomes the first bunny to join the police force. Eager to prove herself, she teams up with a cynical con-artist fox named Nick Wilde to solve a mysterious case of missing predators, uncovering a conspiracy that threatens the peace of Zootopia.",
+  "main_characters": [
+    {"name": "Judy Hopps", "species": "Rabbit", "voice_actor": "Ginnifer Goodwin", "role": "Protagonist, first rabbit police officer in Zootopia"},
+    {"name": "Nick Wilde", "species": "Red Fox", "voice_actor": "Jason Bateman", "role": "Con artist who becomes Judy's partner"},
+    {"name": "Chief Bogo", "species": "Cape Buffalo", "voice_actor": "Idris Elba", "role": "Chief of the Zootopia Police Department"},
+    {"name": "Assistant Mayor Bellwether", "species": "Sheep", "voice_actor": "Jenny Slate", "role": "Assistant to Mayor Lionheart"},
+    {"name": "Mayor Lionheart", "species": "Lion", "voice_actor": "J.K. Simmons", "role": "Mayor of Zootopia"},
+    {"name": "Flash", "species": "Three-toed Sloth", "voice_actor": "Raymond S. Persi", "role": "DMV employee known for being extremely slow"},
+    {"name": "Clawhauser", "species": "Cheetah", "voice_actor": "Nate Torrence", "role": "Friendly receptionist at the ZPD"}
+  ],
+  "themes": ["Prejudice and stereotyping", "Pursuing dreams despite obstacles", "Unlikely partnerships", "Social inequality"],
+  "awards": [
+    "Academy Award for Best Animated Feature (2017)",
+    "Golden Globe for Best Animated Feature Film (2017)",
+    "Annie Award for Best Animated Feature (2017)"
+  ],
+  "box_office": "$1.024 billion worldwide",
+  "studio": "Walt Disney Animation Studios",
+  "sequel": {
+    "title": "Zootopia 2",
+    "year": 2025
+  }
+}
