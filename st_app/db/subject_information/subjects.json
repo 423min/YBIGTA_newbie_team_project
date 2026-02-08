@@ -1,0 +1,15 @@
+[
+  {
+    "id": "zootopia",
+    "title": "Zootopia",
+    "title_ko": "주토피아",
+    "aliases": ["zootopia", "주토피아", "zootopia movie"],
+    "genre": ["Animation", "Adventure", "Comedy"],
+    "director": ["Byron Howard", "Rich Moore"],
+    "release_date": "2016-03-04",
+    "running_time": "108 min",
+    "plot": "In a city of anthropomorphic animals, a rookie bunny cop and a cynical con artist fox must work together to uncover a conspiracy.",
+    "characters": ["Judy Hopps", "Nick Wilde", "Chief Bogo", "Flash"],
+    "platform": ["IMDb", "Letterboxd", "Rotten Tomatoes"]
+  }
+]
